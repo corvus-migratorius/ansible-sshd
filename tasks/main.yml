@@ -11,6 +11,9 @@
 - name: "Configure SSH encryption keys"
   ansible.builtin.include_tasks: "encryption.yml"
 
+- name: "Configure additional restrictions"
+  ansible.builtin.include_tasks: "restrictions.yml"
+
 - name: "Log at VERBOSE level"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
