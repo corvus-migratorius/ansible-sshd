@@ -1,7 +1,7 @@
-template
+ansible-sshd
 =========
 
-Template for Ansible role monorepos
+Deploy a hardened sshd server
 
 Requirements
 ------------
@@ -23,7 +23,7 @@ Example Playbook
 
 ```yaml
 roles:
-    - role: genlab.template
+    - role: genlab.sshd
 ```
 
 License

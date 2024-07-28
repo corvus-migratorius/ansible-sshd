@@ -1,10 +1,10 @@
 ---
 galaxy_info:
-  role_name: "template"
+  role_name: sshd
   namespace: genlab
   author: "Alexander Gorelyshev"
   company: "Genlab, LLC"
-  description: ""
+  description: "Deploy a hardened sshd server"
   license: "MIT"
   min_ansible_version: "2.1"
 
