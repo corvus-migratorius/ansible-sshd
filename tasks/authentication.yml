@@ -6,7 +6,7 @@
     line: 'PubkeyAuthentication yes'
     validate: sshd -f %s -t
 
-- name: "Authentication | explicitly configure password authentication"
+- name: "Authentication | configure password authentication as {{ password_auth | ternary('yes', 'no') }}"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PasswordAuthentication'
@@ -20,14 +20,14 @@
     line: 'PermitEmptyPasswords no'
     validate: sshd -f %s -t
 
-- name: "Authentication | disallow challenge-response authentication"
+- name: "Authentication | configure challenge-response authentication as {{ challenge_response_auth | ternary('yes', 'no') }}"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?ChallengeResponseAuthentication'
     line: 'ChallengeResponseAuthentication {{ challenge_response_auth | ternary("yes", "no") }}'
     validate: sshd -f %s -t
 
-- name: "Authentication | restrict authentication methods to public key"
+- name: "Authentication | restrict authentication methods"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?AuthenticationMethods'
