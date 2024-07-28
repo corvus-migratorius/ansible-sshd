@@ -1,0 +1,42 @@
+---
+- name: "Restrictions | set protocol to version 2"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^Protocol 2'
+    line: 'Protocol 2'
+    validate: sshd -f %s -t
+
+- name: "Restrictions | disallow SSH login as root"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    validate: sshd -f %s -t
+
+- name: "Restrictions | disallow X11Forwarding"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?X11Forwarding'
+    line: 'X11Forwarding no'
+    validate: sshd -f %s -t
+
+- name: "Restrictions | disable .rhosts"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?IgnoreRhosts'
+    line: 'IgnoreRhosts yes'
+    validate: sshd -f %s -t
+
+- name: "Restrictions | toggle PAM"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?UsePAM'
+    line: "UsePAM {{ disable_pam | ternary('no', 'yes') }}"
+    validate: sshd -f %s -t
+
+- name: "Restrictions | ensure the SSHD config is restricted to the root user"
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0600"

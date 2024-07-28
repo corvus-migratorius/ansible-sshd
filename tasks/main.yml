@@ -1,118 +1,18 @@
 ---
-- name: "Install OpenSSH (RHEL flavours)"
-  when: ansible_os_family == "RHEL"
-  ansible.builtin.yum:
-    name: openssh
-    state: installed
+- name: "Install an OpenSSH server"
+  ansible.builtin.include_tasks: "install.yml"
 
-- name: "Install OpenSSH (Debian flavours)"
-  when: ansible_os_family == "Debian"
-  ansible.builtin.apt:
-    name: openssh-server
-    state: present
+- name: "Configure SSH algorithms"
+  ansible.builtin.include_tasks: "algorithms.yml"
 
-## ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ##
-## sshd configuration
-## SRC: https://max-ko.ru/55-redaktirovanie-konfig-fajlov-s-pomoschju-ansible-na-primere-sshd_config.html
+- name: "Configure authentication methods"
+  ansible.builtin.include_tasks: "authentication.yml"
 
-- name: "Set protocol to version 2"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^Protocol 2'
-    line: 'Protocol 2'
-    validate: sshd -f %s -t
+- name: "Configure SSH encryption keys"
+  ansible.builtin.include_tasks: "encryption.yml"
 
-# NOTE: order of preference for openssh-server ed25519 -> rsa
-- name: "Enable ed25519 authentication algorithm"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^HostKey /etc/ssh/ssh_host_ed25519_key'
-    line: 'HostKey /etc/ssh/ssh_host_ed25519_key'
-    validate: sshd -f %s -t
-
-- name: "Enable the RSA authentication algorithm"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^HostKey /etc/ssh/ssh_host_rsa_key'
-    line: 'HostKey /etc/ssh/ssh_host_rsa_key'
-    validate: sshd -f %s -t
-
-- name: "Disable the ECDSA algorithm (deemed to be less safe)"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^HostKey /etc/ssh/ssh_host_ecdsa_key'
-    state: absent
-    validate: sshd -f %s -t
-
-- name: "Disable the DSA algorithm (considered to be defunct)"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^HostKey /etc/ssh/ssh_host_dsa_key'
-    state: absent
-    validate: sshd -f %s -t
-
-- name: "Enable public key authentication"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?PubkeyAuthentication'
-    line: 'PubkeyAuthentication yes'
-    validate: sshd -f %s -t
-
-- name: "Explicitly disallow password authentication"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?PasswordAuthentication'
-    line: 'PasswordAuthentication no'
-    validate: sshd -f %s -t
-
-- name: "Prohibit empty passwords (just in case)"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?PermitEmptyPasswords no'
-    line: 'PermitEmptyPasswords no'
-    validate: sshd -f %s -t
-
-- name: "Disallow challenge-response authentication"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?ChallengeResponseAuthentication'
-    line: 'ChallengeResponseAuthentication no'
-    validate: sshd -f %s -t
-
-- name: "Restrict authentication methods to public key"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?AuthenticationMethods'
-    line: 'AuthenticationMethods publickey'
-    validate: sshd -f %s -t
-
-- name: "Disallow SSH login as root"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?PermitRootLogin'
-    line: 'PermitRootLogin no'
-    validate: sshd -f %s -t
-
-- name: "Disallow X11Forwarding"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?X11Forwarding'
-    line: 'X11Forwarding no'
-    validate: sshd -f %s -t
-
-- name: "Disable .rhosts"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?IgnoreRhosts'
-    line: 'IgnoreRhosts yes'
-    validate: sshd -f %s -t
-
-- name: "Toggle PAM"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?UsePAM'
-    line: "UsePAM {{ disable_pam | ternary('no', 'yes') }}"
-    validate: sshd -f %s -t
+- name: "Configure additional restrictions"
+  ansible.builtin.include_tasks: "restrictions.yml"
 
 - name: "Log at VERBOSE level"
   ansible.builtin.lineinfile:
@@ -121,40 +21,8 @@
     line: 'LogLevel VERBOSE'
     validate: sshd -f %s -t
 
-## ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ##
-## Other sshd config settings
-- name: "Ensure the SSHD config is restricted to the root user"
-  ansible.builtin.file:
-    path: /etc/ssh/sshd_config
-    owner: root
-    group: root
-    mode: "0600"
-
-## ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ##
-## Encryption keys
-- name: "Remove the unsafe ECDSA public key"
-  ansible.builtin.file:
-    path: /etc/ssh/ssh_host_ecdsa_key.pub
-    state: absent
-
-- name: "Remove the unsafe ECDSA private key"
-  ansible.builtin.file:
-    path: /etc/ssh/ssh_host_ecdsa_key
-    state: absent
-
-- name: "Remove the unsafe DSA public key"
-  ansible.builtin.file:
-    path: /etc/ssh/ssh_host_dsa_key.pub
-    state: absent
-
-- name: "Remove the unsafe DSA private key"
-  ansible.builtin.file:
-    path: /etc/ssh/ssh_host_dsa_key
-    state: absent
-
 - name: "Restart the SSHD service"
-  tags: [ sshd_hardened  ]
+  changed_when: false
   ansible.builtin.service:
     name: sshd
     state: restarted
-  changed_when: false
