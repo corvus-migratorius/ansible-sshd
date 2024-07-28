@@ -18,7 +18,7 @@
   ansible.builtin.stat:
     path: "/etc/ssh/sshd_config.d/50-cloud-init.conf"
 
-- name: "Authentication | override password authentication by cloud-init as {{ password_auth | ternary('yes', 'no') }}"
+- name: "Authentication | override password authentication by cloud-init to {{ password_auth | ternary('yes', 'no') }}"
   when: sshd_cloud_init.stat.exists
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config.d/50-cloud-init.conf"
