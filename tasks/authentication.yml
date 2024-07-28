@@ -43,5 +43,5 @@
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?AuthenticationMethods'
-    line: 'AuthenticationMethods publickey{{ password_auth | ternary(",password", "") }}'
+    line: 'AuthenticationMethods publickey {{ password_auth | ternary("password", "") }}'
     validate: sshd -f %s -t
