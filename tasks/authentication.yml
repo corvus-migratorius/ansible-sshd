@@ -6,7 +6,7 @@
     line: 'PubkeyAuthentication yes'
     validate: sshd -f %s -t
 
-- name: "Authentication | configure password authentication as {{ password_auth | ternary('yes', 'no') }}"
+- name: "Authentication | configure password authentication as '{{ password_auth | ternary('yes', 'no') }}'"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PasswordAuthentication'
@@ -18,7 +18,7 @@
   ansible.builtin.stat:
     path: "/etc/ssh/sshd_config.d/50-cloud-init.conf"
 
-- name: "Authentication | override password authentication by cloud-init to {{ password_auth | ternary('yes', 'no') }}"
+- name: "Authentication | override password authentication by cloud-init to '{{ password_auth | ternary('yes', 'no') }}'"
   when: sshd_cloud_init.stat.exists
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config.d/50-cloud-init.conf"
@@ -32,11 +32,18 @@
     line: 'PermitEmptyPasswords no'
     validate: sshd -f %s -t
 
-- name: "Authentication | configure challenge-response authentication as {{ challenge_response_auth | ternary('yes', 'no') }}"
+- name: "Authentication | configure challenge-response authentication as '{{ challenge_response_auth | ternary('yes', 'no') }}'"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?ChallengeResponseAuthentication'
     line: 'ChallengeResponseAuthentication {{ challenge_response_auth | ternary("yes", "no") }}'
+    validate: sshd -f %s -t
+
+- name: "Authentication | configure GSS API authentication as '{{ gss_api_auth | ternary('yes', 'no') }}'"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?GSSAPIAuthentication'
+    line: 'GSSAPIAuthentication {{ challenge_response_auth | ternary("yes", "no") }}'
     validate: sshd -f %s -t
 
 - name: "Authentication | restrict authentication methods"
