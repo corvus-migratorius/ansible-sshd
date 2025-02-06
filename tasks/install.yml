@@ -1,7 +1,7 @@
 ---
 - name: "Install | install OpenSSH (RHEL flavours)"
   when: ansible_os_family == "RHEL"
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: openssh
     state: installed
 
