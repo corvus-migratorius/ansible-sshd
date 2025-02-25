@@ -9,7 +9,7 @@
 - name: "Restrictions | disallow SSH login as root"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
-    regexp: '^#?PermitRootLogin'
+    regexp: '^PermitRootLogin yes'
     line: 'PermitRootLogin no'
     validate: sshd -f %s -t
 
