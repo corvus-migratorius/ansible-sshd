@@ -37,8 +37,9 @@
 - name: "Restrictions | disable Debian banner"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
-    regexp: '^#?UsePAM'
+    regexp: '^#?DebianBanner\s+'
     line: "DebianBanner no"
+    state: present
     validate: sshd -f %s -t
 
 - name: "Restrictions | ensure the SSHD config is restricted to the root user"
