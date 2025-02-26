@@ -1,45 +1,22 @@
 ---
-- name: "Restrictions | set protocol to version 2"
+- name: "Restrictions | Configure SSH security restrictions"
+  loop:
+    - { regexp: '^#?Protocol\s+', line: 'Protocol 2' }
+    - { regexp: '^PermitRootLogin yes', line: 'PermitRootLogin no' }
+    - { regexp: '^#?X11Forwarding', line: 'X11Forwarding no' }
+    - { regexp: '^#?IgnoreRhosts', line: 'IgnoreRhosts yes' }
+    - { regexp: '^#?DebianBanner\s+', line: 'DebianBanner no' }
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
-    regexp: '^Protocol 2'
-    line: 'Protocol 2'
-    validate: sshd -f %s -t
-
-- name: "Restrictions | disallow SSH login as root"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^PermitRootLogin yes'
-    line: 'PermitRootLogin no'
-    validate: sshd -f %s -t
-
-- name: "Restrictions | disallow X11Forwarding"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?X11Forwarding'
-    line: 'X11Forwarding no'
-    validate: sshd -f %s -t
-
-- name: "Restrictions | disable .rhosts"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?IgnoreRhosts'
-    line: 'IgnoreRhosts yes'
-    validate: sshd -f %s -t
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    validate: /usr/sbin/sshd -t -f %s
 
 - name: "Restrictions | toggle PAM"
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?UsePAM'
     line: "UsePAM {{ disable_pam | ternary('no', 'yes') }}"
-    validate: sshd -f %s -t
-
-- name: "Restrictions | disable Debian banner"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?DebianBanner\s+'
-    line: "DebianBanner no"
-    state: present
     validate: sshd -f %s -t
 
 - name: "Restrictions | ensure the SSHD config is restricted to the root user"
