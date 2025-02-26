@@ -15,14 +15,9 @@
   ansible.builtin.include_tasks: "restrictions.yml"
 
 - name: "Log at VERBOSE level"
+  notify: Restart sshd
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?LogLevel'
     line: 'LogLevel VERBOSE'
     validate: sshd -f %s -t
-
-- name: "Restart the SSHD service"
-  changed_when: false
-  ansible.builtin.service:
-    name: sshd
-    state: restarted
