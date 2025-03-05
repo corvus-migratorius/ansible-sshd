@@ -1,17 +1,21 @@
 ---
-- name: "Authentication | enable public key authentication"
+- name: "Authentication | Configure SSH authentication settings"
+  notify: Restart sshd
+  loop:
+    - { regexp: '^#?\s*PubkeyAuthentication\s+', line: 'PubkeyAuthentication yes' }
+    - { regexp: '^#?\s*PasswordAuthentication\s+', line: 'PasswordAuthentication {{ password_auth | ternary("yes", "no") }}' }
+    - { regexp: '^#?\s*PermitEmptyPasswords\s+', line: 'PermitEmptyPasswords no' }
+    - { regexp: '^#?\s*ChallengeResponseAuthentication\s+', line: 'ChallengeResponseAuthentication {{ challenge_response_auth | ternary("yes", "no") }}' }
+    - { regexp: '^#?\s*GSSAPIAuthentication\s+', line: 'GSSAPIAuthentication {{ gss_api_auth | ternary("yes", "no") }}' }
+    - {
+      regexp: '^#?\s*AuthenticationMethods\s+',
+      line: "{{ 'AuthenticationMethods publickey password' if password_auth else 'AuthenticationMethods publickey' }}"
+    }
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
-    regexp: '^#?PubkeyAuthentication'
-    line: 'PubkeyAuthentication yes'
-    validate: sshd -f %s -t
-
-- name: "Authentication | configure password authentication as '{{ password_auth | ternary('yes', 'no') }}'"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?PasswordAuthentication'
-    line: 'PasswordAuthentication {{ password_auth | ternary("yes", "no") }}'
-    validate: sshd -f %s -t
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    validate: /usr/sbin/sshd -t -f %s
 
 - name: "Check if there is an SSH config forced by cloud-init"
   register: sshd_cloud_init
@@ -20,35 +24,8 @@
 
 - name: "Authentication | override password authentication by cloud-init to '{{ password_auth | ternary('yes', 'no') }}'"
   when: sshd_cloud_init.stat.exists
+  notify: Restart sshd
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config.d/50-cloud-init.conf"
     regexp: '^#?PasswordAuthentication'
     line: 'PasswordAuthentication {{ password_auth | ternary("yes", "no") }}'
-
-- name: "Authentication | prohibit empty passwords"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?PermitEmptyPasswords no'
-    line: 'PermitEmptyPasswords no'
-    validate: sshd -f %s -t
-
-- name: "Authentication | configure challenge-response authentication as '{{ challenge_response_auth | ternary('yes', 'no') }}'"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?ChallengeResponseAuthentication'
-    line: 'ChallengeResponseAuthentication {{ challenge_response_auth | ternary("yes", "no") }}'
-    validate: sshd -f %s -t
-
-- name: "Authentication | configure GSS API authentication as '{{ gss_api_auth | ternary('yes', 'no') }}'"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?GSSAPIAuthentication'
-    line: 'GSSAPIAuthentication {{ challenge_response_auth | ternary("yes", "no") }}'
-    validate: sshd -f %s -t
-
-- name: "Authentication | restrict authentication methods"
-  ansible.builtin.lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^#?AuthenticationMethods'
-    line: 'AuthenticationMethods publickey {{ password_auth | ternary("password", "") }}'
-    validate: sshd -f %s -t
