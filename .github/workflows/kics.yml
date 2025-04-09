@@ -19,4 +19,3 @@ jobs:
           path: .
           token: ${{ secrets.GITHUB_TOKEN }}
           output_path: myResults/
-:
